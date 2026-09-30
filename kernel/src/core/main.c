@@ -2,21 +2,9 @@
 #include "minemu/trap.h"
 #include "minemu/trace.h"
 #include "minemu/platform.h"
-
-static void uart_putc(char c) {
-    // Busy-wait until the UART can accept a byte
-    while ((MINEMU_UART0->status & MINEMU_UART_STATUS_TX_READY) == 0) {
-        // spin
-    }
-    MINEMU_UART0->tx_data = (uint32_t)(uint8_t)c;
-}
-
-static void uart_puts(const char *s) {
-    while (*s != '\0') {
-        uart_putc(*s);
-        s++;
-    }
-}
+#include "minemu/uart.h"
+#include "minemu/msh.h"
+#include "minemu/irq.h"
 
 void minemu_kernel_main(const struct minemu_boot_info *boot_info) {
     if ((uintptr_t)boot_info != MINEMU_BOOT_INFO_VADDR ||
@@ -32,7 +20,16 @@ void minemu_kernel_main(const struct minemu_boot_info *boot_info) {
     }
     minemu_trace_event(1);
 
-    uart_puts("hello world\n");
-    
-    minemu_fail_stop();
+
+    uart_init();                  // register handler, enable UART RX + controller bit
+    msh_init();                   // reset line state, print first "msh> "
+    minemu_irq_enable();
+
+    for (;;) {
+        uint8_t b;
+        if (uart_try_getc(&b)) {
+            msh_feed(b);
+        }
+    }
+
 }

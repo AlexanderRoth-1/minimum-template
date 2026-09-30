@@ -7,13 +7,20 @@ KERNEL := $(BUILD)/minimum-kernel.elf
 RUNTIME := $(BUILD)/libminemu_kernel.a
 
 CORE_OBJECT := $(BUILD)/core/main.o
+FORCE_OBJECTS := \
+	$(BUILD)/startup/irq_trampoline.o \
+	$(BUILD)/runtime/irq.o
 RUNTIME_OBJECTS := \
 	$(BUILD)/runtime/block.o \
 	$(BUILD)/runtime/exception.o \
 	$(BUILD)/runtime/memory.o \
 	$(BUILD)/runtime/trace.o \
 	$(BUILD)/startup/boot.o \
-	$(BUILD)/startup/vectors.o
+	$(BUILD)/startup/vectors.o \
+	$(BUILD)/runtime/uart.o \
+	$(BUILD)/runtime/irq.o \
+	$(BUILD)/startup/irq_trampoline.o \
+	$(BUILD)/runtime/msh.o
 
 OBJECTS := $(CORE_OBJECT) $(RUNTIME_OBJECTS)
 DEPENDENCIES := $(OBJECTS:.o=.d)
@@ -57,9 +64,9 @@ $(RUNTIME): $(RUNTIME_OBJECTS)
 	@mkdir -p $(dir $@)
 	$(AR) rcs $@ $^
 
-$(KERNEL): $(CORE_OBJECT) $(RUNTIME) linker/kernel.ld
+$(KERNEL): $(CORE_OBJECT) $(FORCE_OBJECTS) $(RUNTIME) linker/kernel.ld
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) $(CORE_OBJECT) $(RUNTIME) $(LIBGCC) -o $@
+	$(CC) $(LDFLAGS) $(CORE_OBJECT) $(FORCE_OBJECTS) $(RUNTIME) $(LIBGCC) -o $@
 
 $(BUILD)/core/%.o: src/core/%.c
 	@mkdir -p $(dir $@)
