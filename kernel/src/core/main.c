@@ -2,9 +2,6 @@
 #include "minemu/trap.h"
 #include "minemu/trace.h"
 #include "minemu/platform.h"
-#include "minemu/uart.h"
-#include "minemu/msh.h"
-#include "minemu/irq.h"
 
  void minemu_run_user_module(const struct minemu_boot_info *boot_info,
                                  const char *name, size_t name_length);
@@ -21,19 +18,9 @@ void minemu_kernel_main(const struct minemu_boot_info *boot_info) {
         minemu_trace_event(UINT32_C(0xb007bad0));
         minemu_fail_stop();
     }
+
     minemu_trace_event(1);
-    static const char hello_name[] = "minimum-user";
-    minemu_run_user_module(boot_info, hello_name, sizeof(hello_name) - 1);
-
-    uart_init();                  // register handler, enable UART RX + controller bit
-    msh_init();                   // reset line state, print first "msh> "
-    minemu_irq_enable();
-
-    for (;;) {
-        uint8_t b;
-        if (uart_try_getc(&b)) {
-            msh_feed(b);
-        }
-    }
-
+    static const char shell_name[] = "minimum-user";
+    minemu_run_user_module(boot_info, shell_name, sizeof(shell_name) - 1);
 }
+
