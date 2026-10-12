@@ -6,6 +6,9 @@
 #include "minemu/msh.h"
 #include "minemu/irq.h"
 
+ void minemu_run_user_module(const struct minemu_boot_info *boot_info,
+                                 const char *name, size_t name_length);
+
 void minemu_kernel_main(const struct minemu_boot_info *boot_info) {
     if ((uintptr_t)boot_info != MINEMU_BOOT_INFO_VADDR ||
         boot_info->magic != MINEMU_BOOT_INFO_MAGIC ||
@@ -19,7 +22,8 @@ void minemu_kernel_main(const struct minemu_boot_info *boot_info) {
         minemu_fail_stop();
     }
     minemu_trace_event(1);
-
+    static const char hello_name[] = "minimum-user";
+    minemu_run_user_module(boot_info, hello_name, sizeof(hello_name) - 1);
 
     uart_init();                  // register handler, enable UART RX + controller bit
     msh_init();                   // reset line state, print first "msh> "
